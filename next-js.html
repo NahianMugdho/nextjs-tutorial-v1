@@ -1,0 +1,60 @@
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Next.js Complete Guide</title><link rel="stylesheet" href="style.css"><link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@400;600;700&display=swap" rel="stylesheet"></head><body>
+<nav class="top"><a href="index.html">হোম</a><a href="next-js.html" class=on>Next.js গাইড</a><a href="ui-libs.html">Radix + Base UI</a><a href="auth-project.html">প্রজেক্ট ২: Auth</a><a href="auth-db.html">Auth + DB + Google</a><a href="project-1.html">প্রজেক্ট ১: Blog</a><a href="jwt-rbac.html">JWT + Role + Security</a></nav><header class="ban"><h2>Next.js Complete Guide</h2><p>প্রজেক্ট ১ — Next.js দিয়ে ফুল সাইট, ধাপে ধাপে</p><div class="chips"><b>Next.js 15+</b><b>React</b><b>TypeScript</b><b>Tailwind</b></div></header>
+<div class="wrap"><aside><div class="bar"><i id="pb"></i></div><small id="pt"></small><a href="#c1">1. প্রজেক্ট সেটআপ</a><a href="#c2">2. ফাইল স্ট্রাকচার</a><a href="#c3">3. রাউটিং ও লেআউট</a><a href="#c4">4. Server vs Client Component</a><a href="#c5">5. ডেটা ফেচিং, Server Action ও API</a><a href="#c6">6. Image, Metadata ও loading</a><a href="#c7">7. ডেপ্লয়মেন্ট</a></aside><main><section id="c1"><h1><span>1</span>প্রজেক্ট সেটআপ</h1><p>Next.js হলো React-এর ফুল-স্ট্যাক ফ্রেমওয়ার্ক — রাউটিং, সার্ভার রেন্ডারিং, API সব একসাথে। এই গাইডে App Router ব্যবহার করব।</p><table><tr><td>ফ্রেমওয়ার্ক</td><td>Next.js (App Router) + React + TypeScript</td></tr><tr><td>স্টাইল</td><td>Tailwind CSS</td></tr><tr><td>প্রয়োজন</td><td>Node.js LTS, VS Code</td></tr></table><div class="code"><button class="cp">কপি</button><pre>npx create-next-app@latest my-site
+# TypeScript, ESLint, Tailwind, App Router, src/ -&gt; Yes
+cd my-site
+npm run dev   # http://localhost:3000</pre></div><div class="box info">💡 <b>টিপ:</b> প্রশ্নগুলোর ডিফল্ট উত্তর দিলেই চলবে। <code>src/app/page.tsx</code> হলো হোমপেজ।</div><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000</div><div><h3 style="margin:0">Next.js স্টার্টার পেজ</h3><div class="c">"Get started by editing <b>src/app/page.tsx</b>" — এই লেখা দেখলে সেটআপ সফল</div></div></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>create-next-app@latest</td><td>সর্বশেষ স্থিতিশীল ভার্শনের প্রজেক্ট টেমপ্লেট বানায়, হাতে কনফিগ করতে হয় না</td></tr><tr><td>npm run dev</td><td>ডেভ সার্ভার চালায়; ফাইল সেভ করলেই পেজ নিজে রিফ্রেশ হয়</td></tr><tr><td>App Router = Yes</td><td>নতুন ও প্রস্তাবিত রাউটিং; এই গাইডের সবকিছু এর ওপর</td></tr></table><label class="done"><input type="checkbox" data-k="next-js.html#1"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c2"><h1><span>2</span>ফাইল স্ট্রাকচার</h1><div class="code"><button class="cp">কপি</button><pre>my-site/
+├── public/            # ছবি, favicon
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx # সব পেজের কমন লেআউট
+│   │   ├── page.tsx   # &quot;/&quot; রুট
+│   │   ├── about/page.tsx      # &quot;/about&quot;
+│   │   ├── blog/[slug]/page.tsx# &quot;/blog/anything&quot;
+│   │   └── api/hello/route.ts  # API endpoint
+│   ├── components/    # রিইউজেবল কম্পোনেন্ট
+│   └── lib/           # helper, db
+└── next.config.ts</pre></div><div class="box ok">✅ ফোল্ডারের নামই URL। <code>page.tsx</code> থাকলেই সেটা রুট হয়ে যায়।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>app/</td><td>এখানকার ফোল্ডার = URL; রাউটিংয়ের জন্য আলাদা কনফিগ লাগে না</td></tr><tr><td>page.tsx</td><td>এই নামের ফাইল থাকলেই ফোল্ডারটা পাবলিক পেজ হয়</td></tr><tr><td>[slug]</td><td>বর্গাকার বন্ধনী মানে ডাইনামিক অংশ; যেকোনো মান বসতে পারে</td></tr><tr><td>route.ts</td><td>পেজ নয়, API endpoint; GET/POST ফাংশন এক্সপোর্ট করতে হয়</td></tr><tr><td>components/ আর lib/</td><td>UI আর লজিক আলাদা রাখলে প্রজেক্ট বড় হলেও গোছানো থাকে</td></tr></table><label class="done"><input type="checkbox" data-k="next-js.html#2"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c3"><h1><span>3</span>রাউটিং ও লেআউট</h1><h3>লেআউট</h3><div class="code"><div class=fn>src/app/layout.tsx</div><button class="cp">কপি</button><pre>import Link from &quot;next/link&quot;;
+import &quot;./globals.css&quot;;
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    &lt;html lang=&quot;bn&quot;&gt;&lt;body&gt;
+      &lt;nav className=&quot;flex gap-4 p-4 bg-slate-900 text-white&quot;&gt;
+        &lt;Link href=&quot;/&quot;&gt;Home&lt;/Link&gt;&lt;Link href=&quot;/blog&quot;&gt;Blog&lt;/Link&gt;
+      &lt;/nav&gt;
+      {children}
+    &lt;/body&gt;&lt;/html&gt;
+  );
+}</pre></div><h3>ডাইনামিক রুট</h3><div class="code"><div class=fn>src/app/blog/[slug]/page.tsx</div><button class="cp">কপি</button><pre>export default async function Post({ params }: { params: Promise&lt;{ slug: string }&gt; }) {
+  const { slug } = await params;   // Next 15+: params হলো Promise
+  return &lt;h1&gt;পোস্ট: {slug}&lt;/h1&gt;;
+}</pre></div><div class="box warn">⚠️ পেজ বদলাতে <code>&lt;a&gt;</code> নয়, <code>&lt;Link&gt;</code> ব্যবহার করো — না হলে পুরো পেজ রিলোড হবে।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>{ children }</td><td>layout প্রতিটি পেজকে children হিসেবে ভেতরে বসায়; তাই nav একবার লিখলেই সব পেজে থাকে</td></tr><tr><td>lang=&quot;bn&quot;</td><td>স্ক্রিন রিডার ও ব্রাউজার ভাষা চিনে সঠিক ফন্ট ও উচ্চারণ নেয়</td></tr><tr><td>import &quot;./globals.css&quot;</td><td>Tailwind ও গ্লোবাল স্টাইল এখানে একবারই লোড হয়</td></tr><tr><td>Promise&lt;{ slug }&gt;</td><td>Next 15+ এ params অ্যাসিঙ্ক, তাই type-ও Promise</td></tr><tr><td>await params</td><td>না করলে slug পাওয়া যাবে না, রানটাইম এরর হবে</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000/blog/hello</div><div><div class="c">Home | Blog (nav সব পেজে একই)</div><h3 style="margin:0">পোস্ট: hello</h3></div></div><label class="done"><input type="checkbox" data-k="next-js.html#3"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c4"><h1><span>4</span>Server vs Client Component</h1><table><tr><td>Server (ডিফল্ট)</td><td>async/await, DB/API সরাসরি, secret নিরাপদ, JS বান্ডলে যায় না</td></tr><tr><td>Client</td><td>useState, useEffect, onClick — ফাইলের শুরুতে <code>"use client"</code></td></tr></table><div class="code"><div class=fn>src/components/Counter.tsx</div><button class="cp">কপি</button><pre>&quot;use client&quot;;
+import { useState } from &quot;react&quot;;
+
+export default function Counter() {
+  const [n, setN] = useState(0);
+  return &lt;button onClick={() =&gt; setN(n + 1)}&gt;ক্লিক: {n}&lt;/button&gt;;
+}</pre></div><div class="box info">💡 নিয়ম: যতটা সম্ভব Server Component রাখো; ইন্টারঅ্যাকশন দরকার শুধু সেই ছোট অংশটা Client করো।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>&quot;use client&quot;</td><td>এই লাইনের পর ফাইল ব্রাউজারে চলে; এটা ছাড়া useState চালালে এরর</td></tr><tr><td>useState(0)</td><td>n হলো বর্তমান মান, setN বদলানোর ফাংশন; বদলালে কম্পোনেন্ট আবার রেন্ডার হয়</td></tr><tr><td>onClick={() =&gt; setN(n + 1)}</td><td>ক্লিক ইভেন্ট ব্রাউজারে ঘটে, তাই এটা Client-এই লাগে</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">Counter</div><div><div class="c">[ ক্লিক: 0 ] ➜ ৩ বার চাপলে ➜ [ ক্লিক: 3 ]</div></div></div><label class="done"><input type="checkbox" data-k="next-js.html#4"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c5"><h1><span>5</span>ডেটা ফেচিং, Server Action ও API</h1><div class="code"><div class=fn>src/app/blog/page.tsx</div><button class="cp">কপি</button><pre>// Server Component-এ সরাসরি fetch
+export default async function Posts() {
+  const res = await fetch(&quot;https://jsonplaceholder.typicode.com/posts?_limit=5&quot;);
+  const posts: { id: number; title: string }[] = await res.json();
+  return &lt;ul&gt;{posts.map(p =&gt; &lt;li key={p.id}&gt;{p.title}&lt;/li&gt;)}&lt;/ul&gt;;
+}</pre></div><h3>Server Action (ফর্ম সাবমিট)</h3><div class="code"><button class="cp">কপি</button><pre>// src/app/contact/page.tsx
+async function send(formData: FormData) {
+  &quot;use server&quot;;
+  console.log(formData.get(&quot;msg&quot;));   // সার্ভারে চলে
+}
+export default function Contact() {
+  return &lt;form action={send}&gt;&lt;input name=&quot;msg&quot; /&gt;&lt;button&gt;পাঠাও&lt;/button&gt;&lt;/form&gt;;
+}</pre></div><h3>Route Handler (API)</h3><div class="code"><div class=fn>src/app/api/hello/route.ts</div><button class="cp">কপি</button><pre>import { NextResponse } from &quot;next/server&quot;;
+export async function GET() {
+  return NextResponse.json({ message: &quot;হ্যালো Next.js&quot; });
+}</pre></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>async function Posts</td><td>Server Component সরাসরি async হতে পারে; useEffect ছাড়াই ডেটা আনা যায়</td></tr><tr><td>await res.json()</td><td>fetch দেয় Response, JSON পেতে এই ধাপ লাগে</td></tr><tr><td>key={p.id}</td><td>লিস্টে প্রতিটি আইটেমের আলাদা পরিচয়, না থাকলে React সতর্ক করে</td></tr><tr><td>&quot;use server&quot; (ফাংশনের ভেতরে)</td><td>ফাংশনটা শুধু সার্ভারে চলে, console.log টার্মিনালে আসে</td></tr><tr><td>action={send}</td><td>ফর্ম সাবমিটে ব্রাউজার সরাসরি ওই সার্ভার ফাংশন ডাকে</td></tr><tr><td>NextResponse.json</td><td>সঠিক Content-Type সহ JSON রেসপন্স বানায়</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000/api/hello</div><div><div class="c" style="font-family:monospace">{"message":"হ্যালো Next.js"}</div></div></div><label class="done"><input type="checkbox" data-k="next-js.html#5"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c6"><h1><span>6</span>Image, Metadata ও loading</h1><div class="code"><button class="cp">কপি</button><pre>import Image from &quot;next/image&quot;;
+export const metadata = { title: &quot;আমার সাইট&quot;, description: &quot;Next.js দিয়ে বানানো&quot; };
+
+export default function Home() {
+  return &lt;Image src=&quot;/hero.jpg&quot; alt=&quot;hero&quot; width={800} height={400} priority /&gt;;
+}</pre></div><div class="box ok">✅ <code>loading.tsx</code> = লোডিং UI, <code>error.tsx</code> = এরর UI, <code>not-found.tsx</code> = ৪০৪ — রুট ফোল্ডারে রাখলেই কাজ করে।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>width / height</td><td>ছবির মাপ আগে জানা থাকলে লোডের সময় লেআউট লাফায় না</td></tr><tr><td>priority</td><td>প্রথম স্ক্রিনের বড় ছবি আগে লোড হয়, ফলে দ্রুত দেখায়</td></tr><tr><td>export const metadata</td><td>ট্যাবের শিরোনাম ও SEO বর্ণনা সেট করে; ফাইলে এক্সপোর্ট করলেই কাজ করে</td></tr></table><label class="done"><input type="checkbox" data-k="next-js.html#6"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c7"><h1><span>7</span>ডেপ্লয়মেন্ট</h1><div class="code"><button class="cp">কপি</button><pre>npm run build   # আগে লোকালি বিল্ড চেক
+git init &amp;&amp; git add . &amp;&amp; git commit -m &quot;init&quot;
+# GitHub-এ push করে vercel.com থেকে repo Import করো</pre></div><div class="box warn">⚠️ <code>.env.local</code> ফাইল কখনো GitHub-এ দিও না; Vercel-এর Environment Variables-এ বসাও।</div><label class="done"><input type="checkbox" data-k="next-js.html#7"> এই চ্যাপ্টার শেষ করেছি</label></section></main></div><script src="app.js"></script></body></html>

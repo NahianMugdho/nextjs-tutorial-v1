@@ -1,0 +1,88 @@
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Auth + MongoDB + Google</title><link rel="stylesheet" href="style.css"><link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@400;600;700&display=swap" rel="stylesheet"></head><body><nav class="top"><a href="index.html">হোম</a><a href="next-js.html">Next.js গাইড</a><a href="ui-libs.html">Radix + Base UI</a><a href="auth-project.html">প্রজেক্ট ২: Auth</a><a href="auth-db.html" class=on>Auth + DB + Google</a><a href="project-1.html">প্রজেক্ট ১: Blog</a><a href="jwt-rbac.html">JWT + Role + Security</a></nav><header class="ban"><h2>প্রজেক্ট ২ (পর্ব ২): MongoDB + Prisma + Google Login</h2><p>Auth.js দিয়ে আসল ডাটাবেজসহ অথেনটিকেশন</p><div class="chips"><b>MongoDB</b><b>Prisma</b><b>Auth.js v5</b><b>Google OAuth</b></div></header><div class="wrap"><aside><div class="bar"><i id="pb"></i></div><small id="pt"></small><a href="#c1">1. MongoDB Atlas ও Prisma সেটআপ</a><a href="#c2">2. Prisma স্কিমা (Auth.js মডেলসহ)</a><a href="#c3">3. Prisma Client ও CRUD</a><a href="#c4">4. Google OAuth ক্রেডেনশিয়াল</a><a href="#c5">5. Auth.js কনফিগ</a><a href="#c6">6. লগইন বাটন ও প্রটেক্টেড পেজ</a><a href="#c7">7. চেকলিস্ট</a></aside><main><section id="c1"><h1><span>1</span>MongoDB Atlas ও Prisma সেটআপ</h1><p>প্রজেক্ট ২-এর ইন-মেমরি ইউজার অ্যারের বদলে এবার আসল ডাটাবেজ। MongoDB Atlas-এ ফ্রি ক্লাস্টার খুলে connection string নাও।</p><div class="code"><button class="cp">কপি</button><pre>npm install prisma@6 @prisma/client@6
+npm install next-auth@beta @auth/prisma-adapter
+npx prisma init --datasource-provider mongodb</pre></div><div class="code"><div class=fn>.env.local</div><button class="cp">কপি</button><pre>DATABASE_URL=&quot;mongodb+srv://USER:PASS@cluster0.xxxx.mongodb.net/myapp&quot;
+AUTH_SECRET=&quot;&quot;        # npx auth secret চালালে নিজে বসে যাবে
+AUTH_GOOGLE_ID=&quot;&quot;
+AUTH_GOOGLE_SECRET=&quot;&quot;</pre></div><div class="box warn">⚠️ Prisma-র MongoDB সাপোর্ট নিয়ে আমি ভার্শন ৬ ধরে লিখেছি। ভার্শন ৭-এ MongoDB সাপোর্ট আছে কি না নিশ্চিত নই, তাই <code>@6</code> পিন করা। Atlas-এ Network Access-এ তোমার IP যোগ করতে ভুলো না।</div><label class="done"><input type="checkbox" data-k="auth-db.html#1"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c2"><h1><span>2</span>Prisma স্কিমা (Auth.js মডেলসহ)</h1><div class="code"><div class=fn>prisma/schema.prisma</div><button class="cp">কপি</button><pre>generator client { provider = &quot;prisma-client-js&quot; }
+datasource db { provider = &quot;mongodb&quot;; url = env(&quot;DATABASE_URL&quot;) }
+
+model User {
+  id            String    @id @default(auto()) @map(&quot;_id&quot;) @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  posts         Post[]
+}
+model Account {
+  id                String  @id @default(auto()) @map(&quot;_id&quot;) @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+model Post {
+  id       String @id @default(auto()) @map(&quot;_id&quot;) @db.ObjectId
+  title    String
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id])
+}</pre></div><div class="code"><button class="cp">কপি</button><pre>npx prisma generate
+npx prisma db push   # MongoDB-তে migrate নয়, db push</pre></div><div class="box info">💡 JWT সেশন ব্যবহার করলে <code>Session</code>/<code>VerificationToken</code> মডেল লাগে না। Email লিংক লগইন চাইলে VerificationToken যোগ করতে হবে।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>@map(&quot;_id&quot;) @db.ObjectId</td><td>MongoDB-র আইডি হলো _id ObjectId, Prisma-কে সেটা জানাতে হয়</td></tr><tr><td>@unique (email)</td><td>একই ইমেইলে দুই ইউজার ঠেকায়</td></tr><tr><td>@@unique([provider, providerAccountId])</td><td>একই Google অ্যাকাউন্ট দুইবার জমা হয় না</td></tr><tr><td>onDelete: Cascade</td><td>ইউজার মুছলে তার Account-ও মুছে যায়, এলোমেলো ডেটা থাকে না</td></tr><tr><td>prisma db push</td><td>MongoDB-তে স্কিমা সরাসরি প্রয়োগ হয়, migrate লাগে না</td></tr></table><label class="done"><input type="checkbox" data-k="auth-db.html#2"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c3"><h1><span>3</span>Prisma Client ও CRUD</h1><div class="code"><div class=fn>src/lib/prisma.ts</div><button class="cp">কপি</button><pre>import { PrismaClient } from &quot;@prisma/client&quot;;
+const g = globalThis as unknown as { prisma?: PrismaClient };
+export const prisma = g.prisma ?? new PrismaClient();
+if (process.env.NODE_ENV !== &quot;production&quot;) g.prisma = prisma;</pre></div><div class="box ok">✅ <code>globalThis</code> ট্রিক না দিলে dev মোডে হট রিলোডে বারবার নতুন কানেকশন খুলবে।</div><div class="code"><div class=fn>src/app/dashboard/actions.ts</div><button class="cp">কপি</button><pre>&quot;use server&quot;;
+import { prisma } from &quot;@/lib/prisma&quot;;
+import { auth } from &quot;@/auth&quot;;
+import { revalidatePath } from &quot;next/cache&quot;;
+
+export async function addPost(fd: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error(&quot;লগইন দরকার&quot;);
+  await prisma.post.create({ data: { title: String(fd.get(&quot;title&quot;)), authorId: session.user.id } });
+  revalidatePath(&quot;/dashboard&quot;);
+}</pre></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>globalThis cache</td><td>hot reload-এ নতুন নতুন PrismaClient খোলা ও কানেকশন শেষ হওয়া আটকায়</td></tr><tr><td>session?.user?.id</td><td>লগইন আছে কিনা সার্ভারে যাচাই</td></tr><tr><td>authorId: session.user.id</td><td>লেখকের ID ফর্ম থেকে নয়, সেশন থেকে নেওয়া; নইলে কেউ অন্যের নামে পোস্ট করতে পারত</td></tr><tr><td>revalidatePath</td><td>ড্যাশবোর্ডের ক্যাশ বাতিল করে নতুন পোস্ট দেখায়</td></tr></table><label class="done"><input type="checkbox" data-k="auth-db.html#3"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c4"><h1><span>4</span>Google OAuth ক্রেডেনশিয়াল</h1><table><tr><td>১</td><td>console.cloud.google.com → নতুন প্রজেক্ট</td></tr><tr><td>২</td><td>APIs & Services → OAuth consent screen কনফিগার</td></tr><tr><td>৩</td><td>Credentials → Create OAuth client ID → Web application</td></tr><tr><td>৪</td><td>Authorized redirect URI: <code>http://localhost:3000/api/auth/callback/google</code></td></tr><tr><td>৫</td><td>Client ID ও Secret কপি করে <code>.env.local</code>-এ বসাও</td></tr></table><div class="box warn">⚠️ ডেপ্লয়ের পর প্রোডাকশন ডোমেইনের redirect URI (<code>https://your-site.com/api/auth/callback/google</code>) আলাদা করে যোগ করতে হবে।</div><label class="done"><input type="checkbox" data-k="auth-db.html#4"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c5"><h1><span>5</span>Auth.js কনফিগ</h1><div class="code"><div class=fn>src/auth.ts</div><button class="cp">কপি</button><pre>import NextAuth from &quot;next-auth&quot;;
+import Google from &quot;next-auth/providers/google&quot;;
+import { PrismaAdapter } from &quot;@auth/prisma-adapter&quot;;
+import { prisma } from &quot;@/lib/prisma&quot;;
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  providers: [Google],
+  session: { strategy: &quot;jwt&quot; },
+  callbacks: {
+    jwt({ token, user }) { if (user) token.id = user.id; return token; },
+    session({ session, token }) { if (token.id) session.user.id = token.id as string; return session; },
+  },
+});</pre></div><div class="code"><div class=fn>src/app/api/auth/[...nextauth]/route.ts</div><button class="cp">কপি</button><pre>import { handlers } from &quot;@/auth&quot;;
+export const { GET, POST } = handlers;</pre></div><div class="box info">💡 <code>session.user.id</code> TypeScript-এ এরর দিলে <code>next-auth.d.ts</code>-এ <code>Session</code> টাইপে <code>id: string</code> যোগ করো।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>PrismaAdapter(prisma)</td><td>গুগলে প্রথমবার ঢুকলে User ও Account নিজে ডাটাবেজে বানায়</td></tr><tr><td>providers: [Google]</td><td>AUTH_GOOGLE_ID/SECRET env থেকে নিজেই পড়ে</td></tr><tr><td>strategy: &quot;jwt&quot;</td><td>সেশন DB-তে নয়, কুকির টোকেনে থাকে; দ্রুত ও সহজ</td></tr><tr><td>callbacks.jwt</td><td>লগইনের সময় user.id টোকেনে তোলে</td></tr><tr><td>callbacks.session</td><td>টোকেন থেকে id সেশনে আনে, তাই auth() দিয়ে session.user.id মেলে</td></tr><tr><td>handlers → GET, POST</td><td>/api/auth/* এর সব রুট (signin, callback) এই এক লাইনে চালু</td></tr></table><label class="done"><input type="checkbox" data-k="auth-db.html#5"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c6"><h1><span>6</span>লগইন বাটন ও প্রটেক্টেড পেজ</h1><div class="code"><div class=fn>src/components/AuthButton.tsx</div><button class="cp">কপি</button><pre>import { signIn, signOut, auth } from &quot;@/auth&quot;;
+
+export default async function AuthButton() {
+  const session = await auth();
+  return session ? (
+    &lt;form action={async () =&gt; { &quot;use server&quot;; await signOut({ redirectTo: &quot;/&quot; }); }}&gt;
+      &lt;span&gt;{session.user?.name}&lt;/span&gt; &lt;button&gt;লগআউট&lt;/button&gt;
+    &lt;/form&gt;
+  ) : (
+    &lt;form action={async () =&gt; { &quot;use server&quot;; await signIn(&quot;google&quot;, { redirectTo: &quot;/dashboard&quot; }); }}&gt;
+      &lt;button&gt;Google দিয়ে লগইন&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</pre></div><div class="code"><div class=fn>src/app/dashboard/page.tsx</div><button class="cp">কপি</button><pre>import { auth } from &quot;@/auth&quot;;
+import { redirect } from &quot;next/navigation&quot;;
+import { prisma } from &quot;@/lib/prisma&quot;;
+
+export default async function Dashboard() {
+  const session = await auth();
+  if (!session?.user?.id) redirect(&quot;/&quot;);
+  const posts = await prisma.post.findMany({ where: { authorId: session.user.id } });
+  return &lt;h1&gt;স্বাগতম {session.user.name} — তোমার পোস্ট: {posts.length}&lt;/h1&gt;;
+}</pre></div><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000</div><div><div class="c">লগইন নেই ➜ [ Google দিয়ে লগইন ]</div><div class="c">ক্লিক ➜ Google অ্যাকাউন্ট বেছে নাও ➜ callback ➜ /dashboard</div><div class="c">দেখাবে: <b>স্বাগতম Mugdho — তোমার পোস্ট: 0</b> + [লগআউট]</div></div></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>signIn(&quot;google&quot;, { redirectTo })</td><td>Google-এর লগইন পেজে পাঠায়, সফল হলে নির্দিষ্ট পেজে ফেরায়</td></tr><tr><td>&quot;use server&quot; inline action</td><td>বাটনটা সার্ভার কম্পোনেন্টেই থাকে, আলাদা Client ফাইল লাগে না</td></tr><tr><td>findMany({ where: { authorId } })</td><td>শুধু এই ইউজারের পোস্ট, সবার নয়</td></tr></table><label class="done"><input type="checkbox" data-k="auth-db.html#6"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c7"><h1><span>7</span>চেকলিস্ট</h1><table><tr><td>ডাটাবেজ</td><td>Atlas IP allowlist, DATABASE_URL, <code>prisma db push</code></td></tr><tr><td>Auth</td><td>AUTH_SECRET, Google ID/Secret, redirect URI মিলেছে</td></tr><tr><td>ডেপ্লয়</td><td>Vercel-এ সব env var; <code>postinstall: prisma generate</code> স্ক্রিপ্ট</td></tr><tr><td>পরে</td><td>role-based access, Credentials + Google একসাথে</td></tr></table><div class="box ok">✅ লগইন বাটনটা Radix/Base UI Dialog-এর ভেতরে বসিয়ে মডাল লগইন বানাতে পারো।</div><label class="done"><input type="checkbox" data-k="auth-db.html#7"> এই চ্যাপ্টার শেষ করেছি</label></section></main></div><script src="app.js"></script></body></html>

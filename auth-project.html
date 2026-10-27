@@ -1,0 +1,82 @@
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>প্রজেক্ট ২: Authentication</title><link rel="stylesheet" href="style.css"><link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@400;600;700&display=swap" rel="stylesheet"></head><body>
+<nav class="top"><a href="index.html">হোম</a><a href="next-js.html">Next.js গাইড</a><a href="ui-libs.html">Radix + Base UI</a><a href="auth-project.html" class=on>প্রজেক্ট ২: Auth</a><a href="auth-db.html">Auth + DB + Google</a><a href="project-1.html">প্রজেক্ট ১: Blog</a><a href="jwt-rbac.html">JWT + Role + Security</a></nav><header class="ban"><h2>প্রজেক্ট ২: Authentication</h2><p>Next.js-এ Signup, Login, Protected Route — ধাপে ধাপে</p><div class="chips"><b>Server Actions</b><b>JWT (jose)</b><b>bcrypt</b><b>Proxy</b></div></header>
+<div class="wrap"><aside><div class="bar"><i id="pb"></i></div><small id="pt"></small><a href="#c1">1. প্রজেক্ট ও প্যাকেজ</a><a href="#c2">2. Session লাইব্রেরি</a><a href="#c3">3. Signup ও Login (Server Action)</a><a href="#c4">4. রুট প্রটেকশন</a><a href="#c5">5. চেকলিস্ট ও পরের ধাপ</a></aside><main><section id="c1"><h1><span>1</span>প্রজেক্ট ও প্যাকেজ</h1><div class="code"><button class="cp">কপি</button><pre>npx create-next-app@latest auth-app
+cd auth-app
+npm install jose bcryptjs
+npm install -D @types/bcryptjs</pre></div><div class="code"><div class=fn>.env.local</div><button class="cp">কপি</button><pre>SESSION_SECRET=এখানে-৩২+-অক্ষরের-র‍্যান্ডম-স্ট্রিং</pre></div><div class="box info">💡 পদ্ধতি: পাসওয়ার্ড bcrypt দিয়ে hash → লগইনে JWT তৈরি → <b>httpOnly cookie</b>-তে রাখা → প্রতি রিকোয়েস্টে যাচাই।</div><label class="done"><input type="checkbox" data-k="auth-project.html#1"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c2"><h1><span>2</span>Session লাইব্রেরি</h1><div class="code"><div class=fn>src/lib/session.ts</div><button class="cp">কপি</button><pre>import &quot;server-only&quot;;
+import { SignJWT, jwtVerify } from &quot;jose&quot;;
+import { cookies } from &quot;next/headers&quot;;
+
+const key = new TextEncoder().encode(process.env.SESSION_SECRET);
+
+export async function createSession(userId: string) {
+  const token = await new SignJWT({ userId })
+    .setProtectedHeader({ alg: &quot;HS256&quot; })
+    .setExpirationTime(&quot;7d&quot;).sign(key);
+  (await cookies()).set(&quot;session&quot;, token, { httpOnly: true, secure: true, sameSite: &quot;lax&quot;, path: &quot;/&quot; });
+}
+
+export async function getSession() {
+  const token = (await cookies()).get(&quot;session&quot;)?.value;
+  if (!token) return null;
+  try { return (await jwtVerify(token, key)).payload as { userId: string }; }
+  catch { return null; }
+}
+
+export async function deleteSession() { (await cookies()).delete(&quot;session&quot;); }</pre></div><div class="box warn">⚠️ <code>httpOnly</code> কুকি JavaScript থেকে পড়া যায় না — XSS থেকে টোকেন বাঁচে। localStorage-এ টোকেন রেখো না।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>import &quot;server-only&quot;</td><td>ভুল করে Client Component-এ ইমপোর্ট হলে বিল্ড এরর দেয়, তাই SECRET ব্রাউজারে যেতে পারে না</td></tr><tr><td>new TextEncoder().encode</td><td>jose-র কী Uint8Array চায়, স্ট্রিং থেকে বদলায়</td></tr><tr><td>SignJWT(...).sign(key)</td><td>payload-এ সিল বসিয়ে টোকেন বানায়</td></tr><tr><td>httpOnly / secure / sameSite</td><td>কুকি সুরক্ষার তিন ফ্ল্যাগ (বিস্তারিত JWT পেজে)</td></tr><tr><td>await cookies()</td><td>Next 15+ এ cookies() Promise ফেরত দেয়</td></tr><tr><td>try { jwtVerify } catch → null</td><td>মেয়াদোত্তীর্ণ বা জাল টোকেনে ক্র্যাশ না করে "লগইন নেই" ধরা হয়</td></tr></table><label class="done"><input type="checkbox" data-k="auth-project.html#2"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c3"><h1><span>3</span>Signup ও Login (Server Action)</h1><div class="code"><div class=fn>src/app/actions.ts</div><button class="cp">কপি</button><pre>&quot;use server&quot;;
+import bcrypt from &quot;bcryptjs&quot;;
+import { redirect } from &quot;next/navigation&quot;;
+import { createSession, deleteSession } from &quot;@/lib/session&quot;;
+
+const users: { id: string; email: string; hash: string }[] = []; // ডেমো: আসলে DB ব্যবহার করো
+
+export async function signup(_: unknown, fd: FormData) {
+  const email = String(fd.get(&quot;email&quot;)), pass = String(fd.get(&quot;password&quot;));
+  if (pass.length &lt; 6) return { error: &quot;পাসওয়ার্ড কমপক্ষে ৬ অক্ষর&quot; };
+  const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(pass, 10) };
+  users.push(user);
+  await createSession(user.id);
+  redirect(&quot;/dashboard&quot;);
+}
+
+export async function login(_: unknown, fd: FormData) {
+  const u = users.find(x =&gt; x.email === fd.get(&quot;email&quot;));
+  if (!u || !(await bcrypt.compare(String(fd.get(&quot;password&quot;)), u.hash)))
+    return { error: &quot;ইমেইল বা পাসওয়ার্ড ভুল&quot; };
+  await createSession(u.id);
+  redirect(&quot;/dashboard&quot;);
+}
+
+export async function logout() { await deleteSession(); redirect(&quot;/login&quot;); }</pre></div><div class="code"><div class=fn>src/app/login/page.tsx</div><button class="cp">কপি</button><pre>&quot;use client&quot;;
+import { useActionState } from &quot;react&quot;;
+import { login } from &quot;../actions&quot;;
+
+export default function Login() {
+  const [state, action, pending] = useActionState(login, null);
+  return (
+    &lt;form action={action} className=&quot;grid gap-3 max-w-sm mx-auto p-6&quot;&gt;
+      &lt;input name=&quot;email&quot; type=&quot;email&quot; placeholder=&quot;ইমেইল&quot; className=&quot;border p-2&quot; /&gt;
+      &lt;input name=&quot;password&quot; type=&quot;password&quot; placeholder=&quot;পাসওয়ার্ড&quot; className=&quot;border p-2&quot; /&gt;
+      {state?.error &amp;&amp; &lt;p className=&quot;text-red-600&quot;&gt;{state.error}&lt;/p&gt;}
+      &lt;button disabled={pending} className=&quot;bg-blue-600 text-white p-2&quot;&gt;লগইন&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</pre></div><div class="box warn">⚠️ <code>users</code> অ্যারে সার্ভার রিস্টার্টে মুছে যায় — প্রোডাকশনে MongoDB/Postgres ব্যবহার করো।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>bcrypt.hash(pass, 10)</td><td>পাসওয়ার্ড কখনো সরাসরি রাখা যায় না; 10 হলো হ্যাশ করার খরচ, বেশি হলে ব্রুট-ফোর্স কঠিন</td></tr><tr><td>bcrypt.compare</td><td>হ্যাশ ফেরানো যায় না, তাই ইনপুট হ্যাশ করে মেলানো হয়</td></tr><tr><td>&quot;ইমেইল বা পাসওয়ার্ড ভুল&quot;</td><td>কোনটা ভুল তা না বলায় আক্রমণকারী ইমেইল চিনতে পারে না</td></tr><tr><td>useActionState</td><td>সার্ভার অ্যাকশনের ফলাফল (error) ও pending ফর্মে দেখায়</td></tr><tr><td>redirect(&quot;/dashboard&quot;)</td><td>সফল হলে ড্যাশবোর্ডে; এটা শেষ লাইনে রাখতে হয়</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000/login</div><div><div class="c">ইমেইল / পাসওয়ার্ড ভুল দিলে লাল লেখা: <span class="tag">ইমেইল বা পাসওয়ার্ড ভুল</span></div><div class="c">সঠিক হলে ➜ /dashboard</div></div></div><label class="done"><input type="checkbox" data-k="auth-project.html#3"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c4"><h1><span>4</span>রুট প্রটেকশন</h1><div class="code"><div class=fn>src/proxy.ts  (Next 15 হলে middleware.ts, ফাংশনের নাম middleware)</div><button class="cp">কপি</button><pre>import { NextRequest, NextResponse } from &quot;next/server&quot;;
+import { jwtVerify } from &quot;jose&quot;;
+
+const key = new TextEncoder().encode(process.env.SESSION_SECRET);
+
+export default async function proxy(req: NextRequest) {   // Next 16: proxy.ts, আগে: middleware.ts
+  const token = req.cookies.get(&quot;session&quot;)?.value;
+  try { if (token) await jwtVerify(token, key); else throw 0; }
+  catch { return NextResponse.redirect(new URL(&quot;/login&quot;, req.url)); }
+}
+export const config = { matcher: [&quot;/dashboard/:path*&quot;] };</pre></div><div class="code"><div class=fn>src/app/dashboard/page.tsx</div><button class="cp">কপি</button><pre>import { getSession } from &quot;@/lib/session&quot;;
+import { logout } from &quot;../actions&quot;;
+import { redirect } from &quot;next/navigation&quot;;
+
+export default async function Dashboard() {
+  const s = await getSession();
+  if (!s) redirect(&quot;/login&quot;);          // দ্বিতীয় নিরাপত্তা স্তর
+  return &lt;form action={logout}&gt;&lt;h1&gt;স্বাগতম! ID: {s.userId}&lt;/h1&gt;&lt;button&gt;লগআউট&lt;/button&gt;&lt;/form&gt;;
+}</pre></div><div class="box ok">✅ proxy শুধু প্রথম বাধা। ডেটা দেখানোর জায়গায় (<code>getSession()</code>) আবার যাচাই করাই নিরাপদ নিয়ম।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>matcher: [&quot;/dashboard/:path*&quot;]</td><td>শুধু ড্যাশবোর্ড ও তার ভেতরের পেজে চলে, বাকি পেজে অকারণ খরচ নেই</td></tr><tr><td>req.cookies.get(&quot;session&quot;)</td><td>প্রতি রিকোয়েস্টে ব্রাউজার যে কুকি পাঠায় তা পড়ে</td></tr><tr><td>NextResponse.redirect</td><td>ভেরিফাই ব্যর্থ হলে /login-এ ফেরত</td></tr><tr><td>পেজে আবার getSession()</td><td>proxy একমাত্র গার্ড হওয়া উচিত নয়, ডেটার কাছেও যাচাই রাখো</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">/dashboard</div><div><div class="c">লগইন ছাড়া ➜ নিজে নিজে /login-এ চলে যায়</div><div class="c">লগইনের পর ➜ "স্বাগতম! ID: …" ও [লগআউট]</div></div></div><label class="done"><input type="checkbox" data-k="auth-project.html#4"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c5"><h1><span>5</span>চেকলিস্ট ও পরের ধাপ</h1><table><tr><td>নিরাপত্তা</td><td>httpOnly + secure কুকি, bcrypt hash, SESSION_SECRET গোপন</td></tr><tr><td>পরের ধাপ</td><td>MongoDB/Prisma যুক্ত করা, Google লগইন (Auth.js), role-based access</td></tr><tr><td>UI</td><td>লগইন মডাল Radix/Base UI Dialog দিয়ে বানাও</td></tr></table><div class="box info">💡 রেডিমেড সলিউশন চাইলে Auth.js বা Better Auth দেখতে পারো — ধারণাগুলো এই প্রজেক্টের মতোই।</div><label class="done"><input type="checkbox" data-k="auth-project.html#5"> এই চ্যাপ্টার শেষ করেছি</label></section></main></div><script src="app.js"></script></body></html>

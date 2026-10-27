@@ -1,0 +1,51 @@
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>প্রজেক্ট ১: Mini Blog</title><link rel="stylesheet" href="style.css"><link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@400;600;700&display=swap" rel="stylesheet"></head><body><nav class="top"><a href="index.html">হোম</a><a href="next-js.html">Next.js গাইড</a><a href="project-1.html" class=on>প্রজেক্ট ১: Blog</a><a href="ui-libs.html">Radix + Base UI</a><a href="auth-project.html">প্রজেক্ট ২: Auth</a><a href="auth-db.html">Auth + DB + Google</a><a href="jwt-rbac.html">JWT + Role + Security</a></nav><header class="ban"><h2>প্রজেক্ট ১: Mini Blog</h2><p>Next.js-এর বেসিক দিয়ে সম্পূর্ণ প্রজেক্ট, আউটপুট ও ব্যাখ্যাসহ</p><div class="chips"><b>App Router</b><b>Server Component</b><b>Server Action</b><b>Dynamic Route</b></div></header><div class="wrap"><aside><div class="bar"><i id="pb"></i></div><small id="pt"></small><a href="#c1">1. প্রজেক্ট পরিকল্পনা ও চূড়ান্ত আউটপুট</a><a href="#c2">2. ডেটা স্তর: src/lib/posts.ts</a><a href="#c3">3. হোম পেজ ও Dynamic Route</a><a href="#c4">4. নতুন পোস্ট: Server Action</a></aside><main><section id="c1"><h1><span>1</span>প্রজেক্ট পরিকল্পনা ও চূড়ান্ত আউটপুট</h1><p>প্রজেক্ট ১ হলো একটা <b>Mini Blog</b> — লগইন ছাড়া। এতে Routing, Server Component, Server Action ও Dynamic Route একসাথে শিখবে। প্রজেক্ট ২ এর Auth এই কাঠামোর ওপরই বসে।</p><table><tr><td>/</td><td>সব পোস্টের লিস্ট</td></tr><tr><td>/posts/[id]</td><td>একটা পোস্টের বিস্তারিত</td></tr><tr><td>/new</td><td>নতুন পোস্ট লেখার ফর্ম</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000</div><div><h3 style="margin:0">📝 My Blog</h3><div class="c"><b>প্রথম পোস্ট</b><br>Next.js শেখা শুরু!</div><div class="c"><b>দ্বিতীয় পোস্ট</b><br>Server Action দারুণ</div></div></div><div class="code"><div class=fn>terminal</div><button class="cp">কপি</button><pre>npx create-next-app@latest blog &amp;&amp; cd blog
+mkdir src/lib</pre></div><div class="box info">💡 <b>মাথায় রাখার ফরমেট:</b> ডেটা (lib) → পেজ (app) → ইন্টারঅ্যাকশন (action)। যেকোনো সাইটই এই তিন স্তরে ভাঙা যায়।</div><label class="done"><input type="checkbox" data-k="project-1.html#1"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c2"><h1><span>2</span>ডেটা স্তর: src/lib/posts.ts</h1><div class="code"><div class=fn>src/lib/posts.ts</div><button class="cp">কপি</button><pre>export type Post = { id: string; title: string; body: string };
+
+const g = globalThis as unknown as { posts?: Post[] };
+export const posts: Post[] = (g.posts ??= [
+  { id: &quot;1&quot;, title: &quot;প্রথম পোস্ট&quot;, body: &quot;Next.js শেখা শুরু!&quot; },
+  { id: &quot;2&quot;, title: &quot;দ্বিতীয় পোস্ট&quot;, body: &quot;Server Action দারুণ&quot; },
+]);</pre></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>export type Post</td><td>টাইপ একবার লিখলে সব ফাইলে অটো-কমপ্লিট ও ভুল ধরা পড়ে</td></tr><tr><td>globalThis</td><td>dev মোডে হট রিলোডে মডিউল নতুন করে লোড হয়, তখন ডেটা হারাত। globalThis-এ রাখলে টিকে থাকে</td></tr><tr><td>??=</td><td>আগে থেকে থাকলে সেটাই নেয়, না থাকলে শুধু তখন ডিফল্ট বসায়</td></tr></table><div class="box warn">⚠️ এটা শুধু শেখার জন্য। রিস্টার্টে ডেটা মুছে যাবে; আসল প্রজেক্টে Prisma/MongoDB (পর্ব ৪)।</div><label class="done"><input type="checkbox" data-k="project-1.html#2"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c3"><h1><span>3</span>হোম পেজ ও Dynamic Route</h1><div class="code"><div class=fn>src/app/page.tsx</div><button class="cp">কপি</button><pre>import Link from &quot;next/link&quot;;
+import { posts } from &quot;@/lib/posts&quot;;
+
+export default function Home() {
+  return (
+    &lt;main className=&quot;max-w-xl mx-auto p-6&quot;&gt;
+      &lt;h1 className=&quot;text-2xl font-bold&quot;&gt;📝 My Blog&lt;/h1&gt;
+      {posts.map(p =&gt; (
+        &lt;Link key={p.id} href={`/posts/${p.id}`} className=&quot;block border rounded p-3 my-2&quot;&gt;
+          {p.title}
+        &lt;/Link&gt;
+      ))}
+      &lt;Link href=&quot;/new&quot;&gt;+ নতুন পোস্ট&lt;/Link&gt;
+    &lt;/main&gt;
+  );
+}</pre></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>export default function Home()</td><td>page.tsx-এর default export-ই "/" রুটের পেজ, এটাই Next.js-এর নিয়ম</td></tr><tr><td>কোনো &quot;use client&quot; নেই</td><td>পেজটা Server Component; সরাসরি ডেটা পড়ে, ব্রাউজারে JS পাঠায় না</td></tr><tr><td>posts.map + key</td><td>লিস্ট রেন্ডারে React-এর জন্য প্রতিটি আইটেমে ইউনিক key দরকার</td></tr><tr><td>&lt;Link href&gt;</td><td>পুরো পেজ রিলোড ছাড়াই পেজ বদল ও আগাম লোড (prefetch)</td></tr></table><div class="code"><div class=fn>src/app/posts/[id]/page.tsx</div><button class="cp">কপি</button><pre>import { notFound } from &quot;next/navigation&quot;;
+import { posts } from &quot;@/lib/posts&quot;;
+
+export default async function PostPage({ params }: { params: Promise&lt;{ id: string }&gt; }) {
+  const { id } = await params;
+  const post = posts.find(p =&gt; p.id === id);
+  if (!post) notFound();
+  return &lt;article className=&quot;p-6&quot;&gt;&lt;h1&gt;{post.title}&lt;/h1&gt;&lt;p&gt;{post.body}&lt;/p&gt;&lt;/article&gt;;
+}</pre></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>[id] ফোল্ডার</td><td>URL-এর ওই অংশ ভেরিয়েবল হয়ে params.id-তে আসে</td></tr><tr><td>await params</td><td>Next 15+ এ params Promise, await না করলে এরর</td></tr><tr><td>notFound()</td><td>ভুল id হলে ৪০৪ পেজ দেখায়; নইলে নিচে post.title এ ক্র্যাশ করত</td></tr></table><label class="done"><input type="checkbox" data-k="project-1.html#3"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c4"><h1><span>4</span>নতুন পোস্ট: Server Action</h1><div class="code"><div class=fn>src/app/new/actions.ts</div><button class="cp">কপি</button><pre>&quot;use server&quot;;
+import { redirect } from &quot;next/navigation&quot;;
+import { revalidatePath } from &quot;next/cache&quot;;
+import { posts } from &quot;@/lib/posts&quot;;
+
+export async function addPost(fd: FormData) {
+  const title = String(fd.get(&quot;title&quot;) ?? &quot;&quot;).trim();
+  if (!title) return;
+  posts.push({ id: String(Date.now()), title, body: String(fd.get(&quot;body&quot;) ?? &quot;&quot;) });
+  revalidatePath(&quot;/&quot;);
+  redirect(&quot;/&quot;);
+}</pre></div><div class="code"><div class=fn>src/app/new/page.tsx</div><button class="cp">কপি</button><pre>import { addPost } from &quot;./actions&quot;;
+export default function New() {
+  return (
+    &lt;form action={addPost} className=&quot;grid gap-2 max-w-xl mx-auto p-6&quot;&gt;
+      &lt;input name=&quot;title&quot; placeholder=&quot;শিরোনাম&quot; className=&quot;border p-2&quot; required /&gt;
+      &lt;textarea name=&quot;body&quot; placeholder=&quot;লেখা&quot; className=&quot;border p-2&quot; /&gt;
+      &lt;button className=&quot;bg-blue-600 text-white p-2&quot;&gt;প্রকাশ&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</pre></div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>&quot;use server&quot;</td><td>ফাংশনটা শুধু সার্ভারে চলবে; ব্রাউজার থেকে এটা একটা পাবলিক endpoint হয়ে যায়</td></tr><tr><td>String(fd.get(..)).trim()</td><td>FormData-র মান File বা null হতে পারে; স্ট্রিংয়ে নিয়ে ফাঁকা জায়গা ছাঁটা নিরাপদ</td></tr><tr><td>if (!title) return</td><td>সার্ভারে যাচাই; ব্রাউজারের required বাইপাস করা যায়</td></tr><tr><td>revalidatePath(&quot;/&quot;)</td><td>হোম পেজের ক্যাশ বাতিল করে, নইলে নতুন পোস্ট দেখা যেত না</td></tr><tr><td>redirect(&quot;/&quot;)</td><td>কাজ শেষে হোমে পাঠায়; redirect সবসময় শেষ লাইনে রাখো</td></tr><tr><td>action={addPost}</td><td>আলাদা API route বা fetch ছাড়াই ফর্ম সরাসরি সার্ভার ফাংশন ডাকে</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000/new</div><div><div class="c">শিরোনাম: <b>তৃতীয় পোস্ট</b></div><div class="c">[ প্রকাশ ] ➜ হোমে গিয়ে লিস্টে ৩ নম্বর পোস্ট দেখা যাবে</div></div></div><label class="done"><input type="checkbox" data-k="project-1.html#4"> এই চ্যাপ্টার শেষ করেছি</label></section></main></div><script src="app.js"></script></body></html>

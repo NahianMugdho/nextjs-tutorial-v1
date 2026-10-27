@@ -1,0 +1,39 @@
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Radix UI + Base UI</title><link rel="stylesheet" href="style.css"><link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@400;600;700&display=swap" rel="stylesheet"></head><body>
+<nav class="top"><a href="index.html">হোম</a><a href="next-js.html">Next.js গাইড</a><a href="ui-libs.html" class=on>Radix + Base UI</a><a href="auth-project.html">প্রজেক্ট ২: Auth</a><a href="auth-db.html">Auth + DB + Google</a><a href="project-1.html">প্রজেক্ট ১: Blog</a><a href="jwt-rbac.html">JWT + Role + Security</a></nav><header class="ban"><h2>Radix UI + Base UI</h2><p>Next.js প্রজেক্টে headless কম্পোনেন্ট ব্যবহারের টিউটোরিয়াল</p><div class="chips"><b>Radix UI</b><b>Base UI</b><b>Tailwind</b><b>Accessibility</b></div></header>
+<div class="wrap"><aside><div class="bar"><i id="pb"></i></div><small id="pt"></small><a href="#c1">1. Headless UI কী?</a><a href="#c2">2. ইনস্টল</a><a href="#c3">3. Dialog (মডাল)</a><a href="#c4">4. স্টাইল স্টেট ও Next.js-এ নিয়ম</a></aside><main><section id="c1"><h1><span>1</span>Headless UI কী?</h1><p>Radix UI ও Base UI — দুটোই <b>unstyled</b> কম্পোনেন্ট লাইব্রেরি। লজিক, accessibility (কীবোর্ড, ARIA, ফোকাস) তারা সামলায়; স্টাইল তুমি Tailwind দিয়ে দাও।</p><table><tr><td>Radix UI</td><td><code>radix-ui</code> প্যাকেজ; <code>asChild</code> দিয়ে কম্পোজ করা</td></tr><tr><td>Base UI</td><td><code>@base-ui/react</code> (MUI টিমের); <code>render</code> prop ও data-attribute স্টাইলিং</td></tr></table><div class="box info">💡 নিচের কোডে ট্যাব বদলে দুটোর পাশাপাশি তুলনা দেখো।</div><label class="done"><input type="checkbox" data-k="ui-libs.html#1"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c2"><h1><span>2</span>ইনস্টল</h1><div><div class="tabs"><button class="on">Radix UI</button><button>Base UI</button></div><div class="pane on"><div class="code"><button class="cp">কপি</button><pre>npm install radix-ui</pre></div></div><div class="pane"><div class="code"><button class="cp">কপি</button><pre>npm install @base-ui/react</pre></div></div></div><div class="box warn">⚠️ পুরোনো Base UI প্রজেক্টে <code>@base-ui-components/react</code> নাম পাবে — নতুন প্রজেক্টে উপরেরটাই নাও।</div><label class="done"><input type="checkbox" data-k="ui-libs.html#2"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c3"><h1><span>3</span>Dialog (মডাল)</h1><div><div class="tabs"><button class="on">Radix UI</button><button>Base UI</button></div><div class="pane on"><div class="code"><div class=fn>components/RadixModal.tsx</div><button class="cp">কপি</button><pre>&quot;use client&quot;;
+import { Dialog } from &quot;radix-ui&quot;;
+
+export default function Modal() {
+  return (
+    &lt;Dialog.Root&gt;
+      &lt;Dialog.Trigger className=&quot;px-4 py-2 bg-blue-600 text-white rounded&quot;&gt;খোলো&lt;/Dialog.Trigger&gt;
+      &lt;Dialog.Portal&gt;
+        &lt;Dialog.Overlay className=&quot;fixed inset-0 bg-black/50&quot; /&gt;
+        &lt;Dialog.Content className=&quot;fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg&quot;&gt;
+          &lt;Dialog.Title&gt;নিশ্চিত?&lt;/Dialog.Title&gt;
+          &lt;Dialog.Description&gt;এই কাজ ফেরানো যাবে না।&lt;/Dialog.Description&gt;
+          &lt;Dialog.Close className=&quot;mt-4 underline&quot;&gt;বন্ধ&lt;/Dialog.Close&gt;
+        &lt;/Dialog.Content&gt;
+      &lt;/Dialog.Portal&gt;
+    &lt;/Dialog.Root&gt;
+  );
+}</pre></div></div><div class="pane"><div class="code"><div class=fn>components/BaseModal.tsx</div><button class="cp">কপি</button><pre>&quot;use client&quot;;
+import { Dialog } from &quot;@base-ui/react/dialog&quot;;
+
+export default function Modal() {
+  return (
+    &lt;Dialog.Root&gt;
+      &lt;Dialog.Trigger className=&quot;px-4 py-2 bg-blue-600 text-white rounded&quot;&gt;খোলো&lt;/Dialog.Trigger&gt;
+      &lt;Dialog.Portal&gt;
+        &lt;Dialog.Backdrop className=&quot;fixed inset-0 bg-black/50&quot; /&gt;
+        &lt;Dialog.Popup className=&quot;fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg&quot;&gt;
+          &lt;Dialog.Title&gt;নিশ্চিত?&lt;/Dialog.Title&gt;
+          &lt;Dialog.Description&gt;এই কাজ ফেরানো যাবে না।&lt;/Dialog.Description&gt;
+          &lt;Dialog.Close className=&quot;mt-4 underline&quot;&gt;বন্ধ&lt;/Dialog.Close&gt;
+        &lt;/Dialog.Popup&gt;
+      &lt;/Dialog.Portal&gt;
+    &lt;/Dialog.Root&gt;
+  );
+}</pre></div></div></div><table><tr><td>পার্থক্য</td><td>Radix: <code>Overlay / Content</code> — Base UI: <code>Backdrop / Popup</code></td></tr></table><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>Dialog.Root</td><td>খোলা/বন্ধ স্টেট এখানে থাকে; আলাদা useState লাগে না</td></tr><tr><td>Dialog.Trigger</td><td>কীবোর্ড ও aria-সহ বাটন; চাপলে মডাল খোলে</td></tr><tr><td>Dialog.Portal</td><td>মডালকে body-র শেষে রেন্ডার করে, তাই overflow বা z-index সমস্যা হয় না</td></tr><tr><td>Overlay / Backdrop</td><td>পেছনের ঝাপসা স্তর; বাইরে ক্লিকে বন্ধ হয়</td></tr><tr><td>Title ও Description</td><td>স্ক্রিন রিডার এ দুটো পড়ে মডালের উদ্দেশ্য বোঝে, তাই বাদ দিও না</td></tr><tr><td>Dialog.Close</td><td>বন্ধ করার বাটন; Esc চাপলেও বন্ধ হয়, লাইব্রেরি নিজে সামলায়</td></tr><tr><td>className=&quot;fixed inset-0 …&quot;</td><td>লাইব্রেরি কোনো স্টাইল দেয় না, ডিজাইন সম্পূর্ণ তোমার Tailwind-এ</td></tr></table><h3>🖥️ আউটপুট কেমন দেখাবে</h3><div class="frame"><div class="u">localhost:3000</div><div><div class="c">[ খোলো ] চাপলে ➜ পেছন কালো ঝাপসা, মাঝখানে সাদা বক্স: <b>নিশ্চিত?</b> এই কাজ ফেরানো যাবে না। <u>বন্ধ</u></div></div></div><label class="done"><input type="checkbox" data-k="ui-libs.html#3"> এই চ্যাপ্টার শেষ করেছি</label></section><section id="c4"><h1><span>4</span>স্টাইল স্টেট ও Next.js-এ নিয়ম</h1><div><div class="tabs"><button class="on">Radix UI</button><button>Base UI</button></div><div class="pane on"><div class="code"><button class="cp">কপি</button><pre>&lt;Dialog.Content className=&quot;data-[state=open]:animate-in&quot;&gt;…
+/* state: data-state=&quot;open&quot; | &quot;closed&quot; */</pre></div></div><div class="pane"><div class="code"><button class="cp">কপি</button><pre>&lt;Dialog.Popup className=&quot;data-[open]:opacity-100 data-[starting-style]:opacity-0 transition&quot;&gt;…
+/* state: data-open / data-closed, data-starting-style */</pre></div></div></div><div class="box ok">✅ দুটোই ইন্টারঅ্যাকটিভ, তাই ব্যবহারের ফাইলে <code>"use client"</code> দিতে ভুলো না।</div><div class="box info">💡 বাকি কম্পোনেন্ট (Tabs, Dropdown Menu, Select, Tooltip) একই প্যাটার্নে: <code>Root → Trigger → Portal → Content/Popup</code>।</div><h3>🔍 লাইনে লাইনে ব্যাখ্যা — কেন এটা ব্যবহার হলো</h3><table class="why"><tr><td>data-[state=open]: (Radix)</td><td>Radix অবস্থা বোঝায় data-state="open|closed" দিয়ে, Tailwind-এ এটা ধরে স্টাইল দেওয়া যায়</td></tr><tr><td>data-[open]: (Base UI)</td><td>Base UI-তে বুলিয়ান অ্যাট্রিবিউট data-open থাকে</td></tr><tr><td>data-starting-style</td><td>খোলার ঠিক আগের অবস্থা; transition বানাতে এটা দিয়ে opacity 0 থেকে শুরু করো</td></tr></table><label class="done"><input type="checkbox" data-k="ui-libs.html#4"> এই চ্যাপ্টার শেষ করেছি</label></section></main></div><script src="app.js"></script></body></html>
